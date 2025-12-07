@@ -1,18 +1,17 @@
 #Prisha Malhotra, Carter Eads, Katie Wagoner Final project
-/* ------------------ Includes ------------------ */
+
 #include <DHT.h>
 #include <LiquidCrystal.h>
 #include <RTClib.h>
 #include <Stepper.h>
 
-/* ------------------ ADC Registers ------------------ */
+
 volatile unsigned char* ADMUX  = (unsigned char*)0x7C;
 volatile unsigned char* ADCSRA = (unsigned char*)0x7A;
 volatile unsigned char* ADCSRB = (unsigned char*)0x7B;
 volatile unsigned char* ADCL   = (unsigned char*)0x78;
 volatile unsigned char* ADCH   = (unsigned char*)0x79;
 
-/* ------------------ USART Registers ------------------ */
 volatile unsigned char* UDR0   = (unsigned char*)0xC6;
 volatile unsigned char* UCSR0A = (unsigned char*)0xC0;
 volatile unsigned char* UCSR0B = (unsigned char*)0xC1;
@@ -20,26 +19,24 @@ volatile unsigned char* UCSR0C = (unsigned char*)0xC2;
 volatile unsigned char* UBRR0H = (unsigned char*)0xC5;
 volatile unsigned char* UBRR0L = (unsigned char*)0xC4;
 
-/* ------------------ GPIO (LED + Buttons) ------------------ */
+
 volatile unsigned char* PORTH = (unsigned char*)0x102;
 volatile unsigned char* DDRH  = (unsigned char*)0x101;
 volatile unsigned char* PORTL = (unsigned char*)0x10B;
 volatile unsigned char* DDRL  = (unsigned char*)0x10A;
 volatile unsigned char* PINL  = (unsigned char*)0x109;
 
-/* ------------------ Components ------------------ */
 DHT dht(53, DHT11);
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 RTC_DS1307 rtc;
 Stepper stepper(200, 23, 25, 27, 29);
 
-/* ------------------ System Variables ------------------ */
+
 unsigned int system_state = 0;         // 0=disabled,1=idle,2=error,3=running
 unsigned int system_disabled = 0;
 unsigned int state_reported = 0;
 unsigned int stepper_position_flag = 0;
 
-/* ------------------ ADC Init ------------------ */
 void adc_init() {
     *ADMUX  = 0b01000000;  // AVCC reference, channel 0 selected
     *ADCSRB = 0x00;
@@ -53,7 +50,7 @@ unsigned int adc_read(unsigned char ch) {
     return (*ADCL | (*ADCH << 8));
 }
 
-/* ------------------ USART ------------------ */
+
 void usart_init(unsigned int br) {
     *UBRR0H = br >> 8;
     *UBRR0L = br;
@@ -76,7 +73,7 @@ void usart_tx_uint(unsigned int x) {
     usart_tx_str(buf);
 }
 
-/* ------------------ Time TX ------------------ */
+
 void tx_time() {
     DateTime now = rtc.now();
     usart_tx_uint(now.month());  usart_tx_str("/");
@@ -88,7 +85,7 @@ void tx_time() {
     usart_tx_uint(now.second());
 }
 
-/* ------------------ Stepper ------------------ */
+
 void step_once() {
     if (stepper_position_flag) {
         stepper.step(-200);
@@ -99,7 +96,7 @@ void step_once() {
     }
 }
 
-/* ------------------ Interrupts ------------------ */
+
 void system_power_isr() { system_disabled = !system_disabled; }
 
 void system_reset_isr() {
@@ -109,7 +106,7 @@ void system_reset_isr() {
     }
 }
 
-/* ------------------ SETUP ------------------ */
+
 void setup() {
     usart_init(16000000 / 16 / 9600 - 1);
     adc_init();
@@ -128,10 +125,9 @@ void setup() {
     *PORTL |= 0b00010000; // stepper input pull-up
 }
 
-/* ------------------ MAIN LOOP ------------------ */
+
 void loop() {
 
-    /* show temp + humidity for states 1,2,3 */
     if (system_state != 0) {
         lcd.clear();
         lcd.setCursor(0, 0);
